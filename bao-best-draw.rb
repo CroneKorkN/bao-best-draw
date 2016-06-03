@@ -18,10 +18,6 @@ class Bao
     # take own stones in hand
     @hand = @fields[@position]
     @fields[@position] = 0
-    
-    p "XXXXXXXXXXXXXXXXXXXXXXXXXX"
-    render
-    p @hand
       
     # take from enemy
     if enemy_bordering? and not first_draw
@@ -34,9 +30,6 @@ class Bao
       @position = (@position + 1) % (@fields.length)
       @fields[@position] += 1
       @hand -= 1
-      p "XXXXXXXXXXXXXXXXXXXXXXXXXX"
-      render
-      p @hand
     end
     
     # draw again?
@@ -90,7 +83,7 @@ class BaoBestDraw
     
 
     # render
-    p "best draw: #{best_draw}; #{best.balance} stones stolen"
+    p "best draw: #{best_draw + 1}; #{best.balance} stones stolen"
     best.render
   end
   
