@@ -11,7 +11,7 @@ class Bao
 
   attr_reader :fields, :enemy_fields
 
-  def draw field
+  def draw field, first_draw = true
     # set position
     @position = field
     
@@ -24,7 +24,7 @@ class Bao
     p @hand
       
     # take from enemy
-    if enemy_bordering?
+    if enemy_bordering? and not first_draw
       @hand += @enemy_fields[bordering(@position)]
       @enemy_fields[bordering(@position)] = 0
     end
@@ -40,7 +40,7 @@ class Bao
     end
     
     # draw again?
-    draw(@position) if @fields[@position] >= 2
+    draw(@position, false) if @fields[@position] >= 2
   end
     
   def balance
