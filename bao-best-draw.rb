@@ -1,28 +1,21 @@
 #!/usr/bin/ruby
 
+# Model
 class Bao
-  def initialize(pitch_width:, stones_per_field:)
-    @fields = Array.new(pitch_width*2, stones_per_field)
-    @enemy_fields = @fields.dup
+  def initialize(fields, enemy_fields)
+    @fields = fields
+    @enemy_fields = enemy_fields
   end
   
-  def fields
-    @fields
-  end
+  public
 
-  def enemy_fields
-    @enemy_fields
-  end
-  
-  def balance
-    @fields.inject(0, :+) - @enemy_fields.inject(0, :+)
-  end
-  
+  attr_reader :fields, :enemy_fields
+
   def draw(field)
     # set position
     @position = field
     
-    # take own
+    # take own stones in hand
     @hand = @fields[@position]
     @fields[@position] = 0
     
@@ -32,41 +25,73 @@ class Bao
       @enemy_fields[@position] = 0
     end
     
-    # spread stones
+    # put stones down
     while @hand > 0
-      @position = (@position + 1) % (@fields.count - 1)
+      @position = (@position + 1) % (@fields.length - 1)
       @fields[@position] += 1
       @hand -= 1
     end
     
     # draw again?
-    if @fields[@position] >= 2
-      draw(@position)
-    end
+    draw(@position) if @fields[@position] >= 2
+  end
+    
+  def balance
+    (@fields.inject(0, :+) - @enemy_fields.inject(0, :+)) / 2
   end
   
   private
   
   def enemy_bordering?
+    # is an enemy field bordering?
     @position > (@fields.count+1)/2
   end
 end
 
-
+# Controller
 class BaoBestDraw
-  def initialize(pitch_width: 8, stones_per_field: 2)
+  def initialize(fields, enemy_fields = nil)
+    # init
     best = nil
-    (pitch_width*2).times do |start_field|
-      bao = Bao.new(pitch_width: 8, stones_per_field: 2)
+    best_draw = nil
+    
+    # try each field as starting point
+    fields.length.times do |start_field|
+      
+      # start simulation
+      bao = Bao.new(fields.dup, enemy_fields.dup)
       bao.draw start_field
+      # have new winner?
       if not best or bao.balance > best.balance
         best = bao
+        best_draw = start_field
       end
     end
-    puts best.balance
-    puts best.fields.slice(pitch_width, (pitch_width*2)).join(";")
-    puts best.fields.slice(0, pitch_width).reverse.join(";")
+
+    # render
+    puts "best draw: #{best_draw}; #{best.balance} stones stolen"
+    puts render best
+  end
+  
+  private
+  
+  def render bao
+    pitch_width = bao.fields.length / 2
+    buffer = bao.enemy_fields.slice(0, pitch_width).join(";")
+    buffer += "\n" + bao.enemy_fields.slice(pitch_width, (pitch_width*2)).reverse.join(";")
+    buffer += "\n" + bao.fields.slice(pitch_width, (pitch_width*2)).join(";")
+    buffer += "\n" + bao.fields.slice(0, pitch_width).reverse.join(";")
   end
 end
 
-BaoBestDraw.new
+# parse params
+default = "2;2;2;2;2;2;2;2;2;2;2;2;2;2;2;2"
+fields = (
+  Hash[ARGV.join(' ').scan(/--?([^=\s]+)(?:=(\S+))?/)]["fields"] || default
+).split(";").map(&:to_i)
+enemy_fields = (
+  Hash[ARGV.join(' ').scan(/--?([^=\s]+)(?:=(\S+))?/)]["enemy_fields"] || default
+).split(";").map(&:to_i)
+
+# go!
+BaoBestDraw.new(fields, enemy_fields)
